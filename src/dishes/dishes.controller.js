@@ -32,6 +32,21 @@ function checkPriceValidator(req, res, next) {
         next();
     }
 }
+
+function urlExists(req, res, next) {
+    const { dishId } = req.params;
+    const dish = dishes.find((e) => e.id === dishId);
+
+    if (dish) {
+        res.locals.dish = dish;
+        next();
+    } else {
+        next({
+            status: 404,
+            message: `Dish with id: ${dishId} not found`,
+        });
+    }
+}
 // Validators end
 
 function create(req, res, next) {
@@ -48,6 +63,10 @@ function list(req, res, next) {
     res.status(200).json({ data: dishes });
 }
 
+function read(req, res, next) {
+    res.status(200).json({ data: res.locals.dish });
+}
+
 module.exports = {
     list,
     create: [
@@ -55,4 +74,5 @@ module.exports = {
         checkPriceValidator,
         create,
     ],
+    read: [urlExists, read],
 };
