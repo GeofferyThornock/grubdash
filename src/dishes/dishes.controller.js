@@ -23,10 +23,10 @@ function makeValidatorFor(field) {
 
 function checkPriceValidator(req, res, next) {
     const { price } = req.body.data;
-    if (price === 0 || isNaN(price)) {
+    if (price <= 0 || isNaN(price)) {
         next({
             status: 400,
-            message: `Price is either 0 or is not a number`,
+            message: `price is either 0 or is not a number`,
         });
     } else {
         next();
@@ -37,7 +37,7 @@ function checkPriceValidator(req, res, next) {
 function create(req, res, next) {
     const { name, description, price, image_url } = req.body.data;
 
-    const newDish = { id: nextId, name, description, price, image_url };
+    const newDish = { id: nextId(), name, description, price, image_url };
 
     dishes.push(newDish);
 
