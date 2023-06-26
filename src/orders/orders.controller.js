@@ -53,6 +53,21 @@ function dishValidator(req, res, next) {
     }
 }
 
+function urlExists(req, res, next) {
+    const { orderId } = req.params;
+    const order = orders.find((e) => e.id === orderId);
+
+    if (order) {
+        res.locals.order = order;
+        next();
+    } else {
+        next({
+            status: 404,
+            message: `Order with id: ${orderId} does not exist`,
+        });
+    }
+}
+
 //Validator functions end
 
 function list(req, res, next) {
@@ -75,6 +90,51 @@ function create(req, res, next) {
     res.status(201).json({ data: newOrder });
 }
 
+function read(req, res, next) {
+    res.send({ data: res.locals.order });
+}
+
+function update(req, res, next) {
+    const { deliverTo, mobileNumber, status } = req.body.data;
+    const order = res.locals.order;
+
+    if (req.body.data.id) {
+        if (order.id !== req.body.data.id) {
+            return next({
+                status: 400,
+                message: `Order id does not match route id. Order: ${req.body.data.id}, Route: ${order.id}`,
+            });
+        }
+    }
+
+    if (status === "invalid") {
+        return next({
+            status: 400,
+            message: "status cannot be invalid",
+        });
+    }
+
+    order.deliverTo = deliverTo;
+    order.mobileNumber = mobileNumber;
+    order.status = status;
+
+    res.send({ data: order });
+}
+
+function destroy(req, res, next) {
+    const order = res.locals.order;
+    const index = orders.findIndex((e) => order.id === e.id);
+    if (order.status !== "pending") {
+        return next({
+            status: 400,
+            message: "An order cannot be deleted unless it is pending",
+        });
+    }
+
+    orders.splice(index, 1);
+    res.status(204).send();
+}
+
 module.exports = {
     list,
     create: [
@@ -82,4 +142,12 @@ module.exports = {
         dishValidator,
         create,
     ],
+    read: [urlExists, read],
+    update: [
+        urlExists,
+        ...["deliverTo", "mobileNumber", "status"].map(validator),
+        dishValidator,
+        update,
+    ],
+    delete: [urlExists, destroy],
 };
